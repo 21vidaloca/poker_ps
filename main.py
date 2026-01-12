@@ -1,0 +1,292 @@
+import random
+import math
+import matplotlib.pyplot as plt
+import itertools
+from collections import Counter
+
+# ==========================================
+# 1. STRUCTURI DE DATE ȘI LOGICĂ (POKER ENGINE)
+# ==========================================
+
+# Folosim notația standard internațională pentru input (e mai sigur), 
+# dar afișăm în română și cu simboluri.
+# s=Spades(Pică), h=Hearts(Inimă), d=Diamonds(Romb), c=Clubs(Treflă)
+SUITS = 'shdc'
+RANKS = '23456789TJQKA'
+RANK_VALUES = {r: i for i, r in enumerate(RANKS, 2)}
+
+# Dicționar pentru afișare frumoasă în consolă
+PRETTY_SUITS = {
+    's': '♠', # Pică
+    'h': '♥', # Inimă
+    'd': '♦', # Romb
+    'c': '♣'  # Treflă
+}
+
+class Card:
+    def __init__(self, rank, suit):
+        self.rank = rank
+        self.suit = suit
+        self.value = RANK_VALUES[rank]
+
+    def __repr__(self):
+        # Când printăm cartea, apare simbolul (ex: A♥)
+        return f"{self.rank}{PRETTY_SUITS[self.suit]}"
+
+    def __eq__(self, other):
+        return self.rank == other.rank and self.suit == other.suit
+    
+    def __hash__(self):
+        return hash(self.rank + self.suit)
+
+def create_deck():
+    """Creează un pachet complet de 52 de cărți."""
+    return [Card(r, s) for s in SUITS for r in RANKS]
+
+def parse_hand(hand_str):
+    """
+    Transformă textul utilizatorului (ex: 'Ah Kh') în obiecte Card.
+    """
+    cards = []
+    if not hand_str: return []
+    
+    # Curățăm spațiile și virgulele
+    clean_str = hand_str.replace(" ", "").replace(",", "")
+    
+    # Citim câte 2 caractere
+    for i in range(0, len(clean_str), 2):
+        if i+1 < len(clean_str):
+            r = clean_str[i]
+            s = clean_str[i+1].lower() # acceptăm și litere mari la culori
+            if r in RANKS and s in SUITS:
+                cards.append(Card(r, s))
+            else:
+                print(f"⚠️ Avertisment: Cartea '{r}{s}' nu este validă și a fost ignorată.")
+    return cards
+
+def get_rank_5(cards):
+    """
+    Evaluează scorul unei mâini de exact 5 cărți.
+    Returnează: (Categorie, [Lista Kicker-i])
+    """
+    # Sortăm descrescător după valoare
+    cards.sort(key=lambda c: c.value, reverse=True)
+    values = [c.value for c in cards]
+    suits = [c.suit for c in cards]
+    
+    is_flush = len(set(suits)) == 1
+    
+    # Verificare Chintă (Straight)
+    is_straight = False
+    if len(set(values)) == 5:
+        if values[0] - values[4] == 4:
+            is_straight = True
+        # Cazul special A-2-3-4-5 (Chinta mică / Roată)
+        if values == [14, 5, 4, 3, 2]:
+            is_straight = True
+            values = [5, 4, 3, 2, 1] 
+            
+    counts = Counter(values)
+    counts_vals = counts.most_common() 
+    
+    # Ierarhia Poker (8=Chintă Roială/Culoare, ..., 0=Carte Mare)
+    if is_straight and is_flush:
+        return (8, values)
+    if counts_vals[0][1] == 4: # Careu
+        return (7, [counts_vals[0][0], counts_vals[1][0]])
+    if counts_vals[0][1] == 3 and counts_vals[1][1] == 2: # Full House
+        return (6, [counts_vals[0][0], counts_vals[1][0]])
+    if is_flush: # Culoare
+        return (5, values)
+    if is_straight: # Chintă
+        return (4, values)
+    if counts_vals[0][1] == 3: # Trei de un fel
+        kickers = [c[0] for c in counts_vals[1:]]
+        return (3, [counts_vals[0][0]] + kickers)
+    if counts_vals[0][1] == 2 and counts_vals[1][1] == 2: # Două Perechi
+        kicker = counts_vals[2][0]
+        return (2, [counts_vals[0][0], counts_vals[1][0], kicker])
+    if counts_vals[0][1] == 2: # O Pereche
+        kickers = [c[0] for c in counts_vals[1:]]
+        return (1, [counts_vals[0][0]] + kickers)
+    
+    return (0, values) # Carte Mare
+
+def evaluate_hand(cards):
+    """Găsește cea mai bună combinație de 5 cărți din totalul disponibil."""
+    if len(cards) < 5: return (-1, [])
+    best_score = (-1, [])
+    # itertools.combinations generează toate variantele posibile de 5 cărți
+    for hand_5 in itertools.combinations(cards, 5):
+        score = get_rank_5(list(hand_5))
+        if score > best_score:
+            best_score = score
+    return best_score
+
+# ==========================================
+# 2. MOTORUL DE SIMULARE (MONTE CARLO)
+# ==========================================
+
+def run_simulation(hero_str, villain_str=None, board_str=None, n_sims=5000):
+    """
+    Rulează simularea Monte Carlo.
+    Returnează: (Equity Final, Istoric Evoluție)
+    """
+    hero_hand = parse_hand(hero_str)
+    
+    # Verificare input
+    if len(hero_hand) != 2:
+        print("Eroare: Trebuie să introduci exact 2 cărți pentru tine.")
+        return 0, []
+
+    # Parsăm board-ul cunoscut (dacă există)
+    known_board = []
+    if board_str:
+        known_board = parse_hand(board_str)
+        
+    full_deck = create_deck()
+    
+    # Scoatem din pachet tot ce e vizibil (Cărțile mele + Ce e pe masă)
+    visible_cards = hero_hand + known_board
+    base_deck = [c for c in full_deck if c not in visible_cards]
+    
+    wins = 0
+    history = []
+    
+    # Pregătim adversarul specific (dacă există)
+    villain_specific = parse_hand(villain_str) if villain_str else None
+    
+    # Câte cărți comune mai trebuie trase? (5 minus câte sunt deja jos)
+    cards_needed = 5 - len(known_board)
+    
+    for i in range(1, n_sims + 1):
+        # Amestecăm pachetul rămas
+        current_deck = base_deck[:]
+        random.shuffle(current_deck)
+        
+        if villain_specific:
+            # CAZ 1: Știm ce are adversarul
+            v_hand = villain_specific
+            # Adversarul nu poate avea cărți care sunt deja în pachetul nostru simulat
+            # Deci tragem board-ul din restul cărților
+            deck_for_board = [c for c in current_deck if c not in v_hand]
+            drawn_board = deck_for_board[:cards_needed]
+        else:
+            # CAZ 2: Adversar Aleatoriu (Random Range)
+            # Tragem 2 cărți pentru adversar
+            v_hand = current_deck[:2]
+            # Tragem restul de cărți pentru masă
+            drawn_board = current_deck[2 : 2 + cards_needed]
+            
+        # Compunem masa completă
+        full_board = known_board + drawn_board
+        
+        # Evaluăm cine câștigă
+        score_hero = evaluate_hand(hero_hand + full_board)
+        score_villain = evaluate_hand(v_hand + full_board)
+        
+        if score_hero > score_villain:
+            wins += 1
+        elif score_hero == score_villain:
+            wins += 0.5 # Egalitate (Split pot)
+            
+        # Salvăm progresul pentru grafic
+        history.append(wins / i)
+        
+    final_equity = wins / n_sims
+    return final_equity, history
+
+# ==========================================
+# 3. ANTRENORUL (COACH & PLOTTING)
+# ==========================================
+
+def get_coach_advice(equity, vs_random=False):
+    """Generează un sfat în română bazat pe procentaj."""
+    if vs_random:
+        # Sfat general (vs Mână necunoscută)
+        if equity > 0.65: return "🚀 MONSTRU! (Raise / All-in)"
+        if equity > 0.55: return "✅ Mână Bună (Joacă agresiv)"
+        if equity > 0.45: return "⚠️ Marginală (Poziție sau Fold)"
+        return "🗑️ Slabă (Fold recomandat)"
+    else:
+        # Sfat specific (vs Mână cunoscută)
+        if equity > 0.60: return "Ești FAVORIT clar!"
+        if equity > 0.45: return "Ești la COIN FLIP (~50/50)"
+        return "Ești OUTSIDER (Probabil pierzi)"
+
+def run_poker_coach():
+    print("\n" + "="*50)
+    print("      ♠ ♥ ♦ ♣  POKER MONTE CARLO  ♣ ♦ ♥ ♠")
+    print("="*50)
+    print("Alege modul de simulare:")
+    print(" [1] Eu vs. Adversar Specific (Ex: KK vs AA)")
+    print(" [2] Eu vs. Mână Aleatorie (Cât de bună e mâna mea?)")
+    
+    mode = input("\nIntrodu 1 sau 2: ").strip()
+    
+    print("\n--- NOTAȚIE CĂRȚI ---")
+    print("Folosește: 2-9, T, J, Q, K, A")
+    print("Culori: h=Inimă(♥), d=Romb(♦), s=Pică(♠), c=Treflă(♣)")
+    print("Exemplu: AhKh (As și Popă de Inimă)")
+    
+    h_str = input("\n>> Mâna ta: ").strip()
+    
+    print(">> Cărți pe masă? (Lasă GOL și apasă Enter dacă ești Pre-Flop)")
+    b_str = input(">> Board: ").strip()
+    
+    v_str = None
+    if mode == "1":
+        v_str = input(">> Mână adversar: ").strip()
+        titlu_grafic = f"Simulare: {h_str} vs {v_str}"
+        vs_random = False
+    else:
+        titlu_grafic = f"Simulare: {h_str} vs Random"
+        vs_random = True
+        
+    # Configurare simulare
+    N_SIMS = 100000
+    print(f"\nRulez {N_SIMS} simulări...")
+    
+    # Rulare
+    equity, istoric = run_simulation(h_str, v_str, b_str, N_SIMS)
+    
+    # Calcule statistice (Inegalitatea Hoeffding)
+    # E = sqrt(ln(2/alpha) / 2N). Pentru 95% incredere, termenul e ~1.36 / sqrt(N)
+    marja_eroare = 1.36 / math.sqrt(N_SIMS)
+    
+    print("\n" + "="*40)
+    print(f" REZULTATE FINALE")
+    print("="*40)
+    print(f"Șanse de Câștig (Equity): {equity:.2%}")
+    print(f"Marjă eroare teoretică:   +/- {marja_eroare:.2%}")
+    print("-" * 40)
+    print(f"SFATUL ANTRENORULUI:\n👉 {get_coach_advice(equity, vs_random)}")
+    print("="*40)
+    
+    # GRAFIC
+    plt.figure(figsize=(10, 6))
+    x_axis = range(1, len(istoric) + 1)
+    
+    # Plotare linie principală
+    plt.plot(x_axis, istoric, label='Evoluție Monte Carlo', color='#007acc', linewidth=1.5)
+    
+    # Linie orizontală finală
+    plt.axhline(y=equity, color='red', linestyle='--', label=f'Final: {equity:.3f}')
+    
+    # Zonă de încredere
+    limita_sus = [min(1.0, equity + marja_eroare)] * len(istoric)
+    limita_jos = [max(0.0, equity - marja_eroare)] * len(istoric)
+    plt.fill_between(x_axis, limita_jos, limita_sus, color='red', alpha=0.1, label='Marjă Eroare 95%')
+    
+    # Estetică grafic
+    plt.title(titlu_grafic, fontsize=14)
+    plt.xlabel('Număr de Simulări', fontsize=12)
+    plt.ylabel('Probabilitate de Câștig (0-1)', fontsize=12)
+    plt.ylim(0, 1)
+    plt.grid(True, linestyle=':', alpha=0.6)
+    plt.legend()
+    
+    print("Generare grafic...")
+    plt.show()
+
+run_poker_coach()
