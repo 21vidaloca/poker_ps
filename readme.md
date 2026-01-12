@@ -1,6 +1,6 @@
 # Poker Monte Carlo Simulator ♠️♥️
 
-Acest proiect este o aplicație a simulărilor de tip Monte Carlo. Ne folosim de simulare pentru a prezice cât de bună este o anumită mână de poker la un moment dat, comparându-ne cu baseline-ul teoretic.
+Acest proiect este o aplicație a simulărilor de tip Monte Carlo. Ne folosim de simulare pentru a prezice cât de bună este o anumită mână de poker la un moment dat, mai ales cand este greu/imposibil de calculata sansa reala.
 
 ## 1. Despre "Magia Neagră" a Simulării
 
@@ -23,3 +23,84 @@ Astfel, legat și de ce am zis mai sus, pentru a reduce eroarea de 10 ori, trebu
 ## 4. Tehnologii (Stack-ul Nostru)
 
 Am folosit **Python** pentru simplitatea și rapiditatea implementării, cât și pentru că are o librării foarte utile precum `matplotlib`. (și pentru că l-am folosit la laborator :PP).
+
+---
+
+## 5. Dependințe
+
+Codul folosește biblioteci standard din Python (`random`, `math`, `itertools`, `collections`), deci nu ai nevoie de mare lucru. Singura librărie externă este **Matplotlib**.
+
+Instaleaz-o rapid cu pip:
+```bash
+pip install matplotlib
+```
+
+## 6. Cum rulezi?
+
+Scrii in terminal
+```bash
+python main.py
+```
+apoi urmezi instructiunile de pe ecran. Atat 👍.
+<br><br><br><br><br>
+
+# Breviar Matematic: Poker Monte Carlo
+Acest document detaliază conceptele matematice utilizate în motorul de simulare.
+
+## 1. Calculul de Equity (Probabilitatea de Câștig)
+
+În cadrul simulării, "Equity-ul" este media aritmetică a rezultatelor obținute. Deoarece un câștig valorează 1 punct, o egalitate (split pot) 0.5 puncte și o înfrângere 0 puncte, formula folosită este:
+
+$$E = \frac{W + 0.5 \times T}{N}$$
+
+Unde:
+* $E$ = Equity (procentajul final).
+* $W$ = Numărul de victorii (Wins).
+* $T$ = Numărul de egalități (Ties/Splits).
+* $N$ = Numărul total de simulări.
+
+---
+
+## 2. Legea Numerelor Mari (LLN)
+
+Simularea se bazează pe **Legea Slabă a Numerelor Mari**. Aceasta garantează că, pe măsură ce dimensiunea eșantionului ($n$) crește, media eșantionului ($\overline{X}_n$) converge în probabilitate către valoarea așteptată teoretică ($\mu$).
+
+$$\lim_{n \to \infty} P\left( | \overline{X}_n - \mu | < \varepsilon \right) = 1$$
+
+**În cod:** Aceasta este logica din spatele buclei `for i in range(n_sims)`, unde acumulăm rezultate pentru a aproxima realitatea.
+
+---
+
+## 3. Inegalitatea Hoeffding (Marja de Eroare)
+
+Pentru a calcula intervalul de încredere (zona roșie de pe grafic) și a estima precizia simulării, am folosit **Inegalitatea Hoeffding**.
+
+Pentru o variabilă aleatoare mărginită în intervalul $[0, 1]$ (cum este șansa de câștig la poker), probabilitatea ca media estimată să devieze de la media reală cu mai mult de $\varepsilon$ este:
+
+$$P(|\overline{X} - E[\overline{X}]| \ge \varepsilon) \le 2e^{-2n\varepsilon^2}$$
+
+Pentru un nivel de încredere de 95% ($\alpha = 0.05$), putem deriva formula marjei de eroare ($\varepsilon$) folosită în cod:
+
+$$\varepsilon \approx \sqrt{\frac{\ln(2/\alpha)}{2n}} \approx \frac{1.36}{\sqrt{n}}$$
+
+**Explicație practică:**
+Formula arată o relație invers pătratică.
+* Dacă $n = 100$, eroarea este $\approx 13.6\%$.
+* Dacă $n = 10,000$, eroarea scade la $\approx 1.36\%$.
+* Pentru a reduce eroarea de 10 ori, trebuie să creștem numărul de simulări de 100 de ori ($10^2$).
+
+---
+
+## 4. Combinatorică (Complexitatea Spațiului de Stări)
+
+Motivul pentru care folosim o abordare stocastică (Monte Carlo) în loc de una deterministă (Brute Force) este dimensiunea spațiului de stări.
+
+Numărul de permutări ale unui pachet de cărți este:
+
+$$P_{52} = 52! \approx 8.06 \times 10^{67}$$
+
+Chiar și într-un scenariu simplificat (Head's Up, Preflop), numărul de board-uri posibile (5 cărți comune din 48 rămase) este dat de combinări:
+
+$$C(48, 5) = \frac{48!}{5!(48-5)!} = 1,712,304$$
+
+Deși calculabil pentru un singur scenariu, într-o aplicație reală unde range-urile adversarilor sunt necunoscute, complexitatea crește exponențial, făcând simularea singura opțiune viabilă în timp real.
