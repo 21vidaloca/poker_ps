@@ -1,6 +1,25 @@
-Acest proiect este o aplicatie a simularilor de tip Monte Carlo. Ne folosim de simulare pentru a prezice cat de buna este o anumita mana de poker la un moment dat, comparandu-ne cu baseline-ul teoretic.
-Teoretic proiectul nu are vreo aplicatie practica in lumea reala, dar demonstreaza perfect cum functioneaza simularile e tip Monte Carlo. Personal inca ni se pare magie neagra cum este de multe ori irelevanta dificultatea/complexitatea a ce simulezi in formula care iti spune de cate simulari ai nevoie pentru a obtine o marja de eroare de maxim x%.
-Am folosit python pentru simplitatea si rapiditatea implementarii, cat si pentru ca are o librarii foarte utile precum matplotlib. (si pentru ca l-am folosit la laborator :PP). Simulatorul se bazeaza pe LEGEA NUMERELOR MARI, pe masura ce numarul de simulari creste, media scade, convergand la probabilitatea reala in timp. (adica la cea teoretica)
-Am aplicat Inegalitatea Hoeffding direct in cod, trantind-o fara nici un fel de gand. Glumesc, am folosit-o pentru a afla o aproximare foarte buna la marja de eroare. Astfel, legat si de ce am zis mai sus, pentru a reduce eroarea de 10 ori, trebuie să mărești numărul de simulări de 100 de ori (relație pătratică), indiferent dacă simulezi aruncarea unei monede sau o mână complexă de poker cu 7 cărți.
+# Poker Monte Carlo Simulator ♠️♥️
 
-De ce Monte Carlo? Pentru ca numarul total de permutari posibil dintr-un pachet de 52 de carti este 52!, un numar absolut inimaginabil de mare. Deci, calculul brute-force este inaccesibil, dar daca folosim o simulare de genul acesta, putem dupa 100.000 de maini sa spunem cu practic certitudine (99.9% precizie) un raspuns *corect. Teoretic nu e corect corect, dar se intelege ideea. Nu va exista niciodata un outlier atat de puternic pe care sa il omitem, intrucat fiecare simulare aduce o cantitate fixa de date in aplicatie.
+Acest proiect este o aplicație a simulărilor de tip Monte Carlo. Ne folosim de simulare pentru a prezice cât de bună este o anumită mână de poker la un moment dat, comparându-ne cu baseline-ul teoretic.
+
+## 1. Despre "Magia Neagră" a Simulării
+
+Teoretic proiectul nu are vreo aplicație practică în lumea reală, dar demonstrează perfect cum funcționează simulările de tip Monte Carlo. Personal încă ni se pare magie neagră cum este de multe ori irelevantă dificultatea/complexitatea a ce simulezi în formula care îți spune de câte simulări ai nevoie pentru a obține o marjă de eroare de maxim x%.
+
+Simulatorul se bazează pe **LEGEA NUMERELOR MARI**: pe măsură ce numărul de simulări crește, media scade, convergând la probabilitatea reală în timp (adică la cea teoretică).
+
+## 2. De ce Monte Carlo și nu altceva?
+
+De ce Monte Carlo? Pentru că numărul total de permutări posibil dintr-un pachet de 52 de cărți este $52!$, un număr absolut inimaginabil de mare. Deci, calculul brute-force este inaccesibil.
+
+Dar dacă folosim o simulare de genul acesta, putem după 100.000 de mâini să spunem cu practic certitudine (99.9% precizie) un răspuns *corect*. Teoretic nu e corect corect, dar se înțelege ideea. Nu va exista niciodată un outlier atât de puternic pe care să îl omitem, întrucât fiecare simulare aduce o cantitate fixă de date în aplicație.
+
+## 3. Matematica din Spate (Inegalitatea Hoeffding)
+
+Am aplicat **Inegalitatea Hoeffding** direct în cod, trântind-o fără nici un fel de gând. Glumesc, am folosit-o pentru a afla o aproximare foarte bună la marja de eroare.
+
+Astfel, legat și de ce am zis mai sus, pentru a reduce eroarea de 10 ori, trebuie să mărești numărul de simulări de 100 de ori (relație pătratică), indiferent dacă simulezi aruncarea unei monede sau o mână complexă de poker cu 7 cărți.
+
+## 4. Tehnologii (Stack-ul Nostru)
+
+Am folosit **Python** pentru simplitatea și rapiditatea implementării, cât și pentru că are o librării foarte utile precum `matplotlib`. (și pentru că l-am folosit la laborator :PP).
