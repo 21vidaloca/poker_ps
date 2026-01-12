@@ -15,6 +15,8 @@ SUITS = 'shdc'
 RANKS = '23456789TJQKA'
 RANK_VALUES = {r: i for i, r in enumerate(RANKS, 2)}
 
+
+
 # Dicționar pentru afișare frumoasă în consolă
 PRETTY_SUITS = {
     's': '♠', # Pică
@@ -204,15 +206,15 @@ def get_coach_advice(equity, vs_random=False):
     """Generează un sfat în română bazat pe procentaj."""
     if vs_random:
         # Sfat general (vs Mână necunoscută)
-        if equity > 0.65: return "🚀 MONSTRU! (Raise / All-in)"
+        if equity > 0.65: return "🚀 MONSTRU! (Raise / All-in / Joaca-ti casa)"
         if equity > 0.55: return "✅ Mână Bună (Joacă agresiv)"
         if equity > 0.45: return "⚠️ Marginală (Poziție sau Fold)"
-        return "🗑️ Slabă (Fold recomandat)"
+        return "🗑️ Slabă (Fold recomandat / Du-te acasa / Iesi baa)"
     else:
         # Sfat specific (vs Mână cunoscută)
-        if equity > 0.60: return "Ești FAVORIT clar!"
-        if equity > 0.45: return "Ești la COIN FLIP (~50/50)"
-        return "Ești OUTSIDER (Probabil pierzi)"
+        if equity > 0.60: return "Ești FAVORIT clar! Sanse peste 60"
+        if equity > 0.45: return "Discutabil"
+        return "Probabil pierzi"
 
 def run_poker_coach():
     print("\n" + "="*50)

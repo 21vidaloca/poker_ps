@@ -115,3 +115,62 @@ Deși calculabil pentru un singur scenariu, într-o aplicație reală unde range
 ---
 
 
+### Descriere Funcții
+
+**Structuri de Date & Parsing**
+
+* `class Card(rank, suit)`
+    * **Input/Output:** (rank, suit) $\to$ Object
+    * **Logică:** Stochează rangul și culoarea; include metode de afișare (`__repr__`) și comparare (`__eq__`, `__hash__`).
+
+* `create_deck()`
+    * **Input/Output:** None $\to$ List[Card]
+    * **Logică:** Generează pachetul complet de 52 de cărți (produs cartezian Rank x Suit).
+
+* `parse_hand(hand_str)`
+    * **Input/Output:** String (ex: "Ah Ks") $\to$ List[Card]
+    * **Logică:** Convertește textul utilizatorului în obiecte `Card`, eliminând caracterele inutile.
+
+**Logică de Poker (Engine)**
+
+* `get_rank_5(cards)`
+    * **Input/Output:** List[Card] (exact 5) $\to$ (Int, List[int])
+    * **Logică:** Calculează scorul unei mâini (de la Carte Mare la Chintă Roială) și returnează tuplul `(Categorie, Kicker)`.
+
+* `evaluate_hand(cards)`
+    * **Input/Output:** List[Card] (oricâte) $\to$ (Int, List[int])
+    * **Logică:** Folosește `itertools.combinations` pentru a găsi cea mai bună combinație de 5 cărți din totalul disponibil.
+
+**Simulare & UI**
+
+* `run_simulation(hero, villain, board, n_sims)`
+    * **Input/Output:** Strings $\to$ (Float, List[float])
+    * **Logică:** Rulează algoritmul Monte Carlo. Simulează `n` jocuri completând board-ul aleatoriu și calculează procentul de câștig (Equity).
+
+* `get_coach_advice(equity, vs_random)`
+    * **Input/Output:** Float $\to$ String
+    * **Logică:** Returnează un sfat textual (ex: "Joacă agresiv") bazat pe praguri procentuale de șansă.
+
+* `run_poker_coach()`
+    * **Input/Output:** Main Entry Point
+    * **Logică:** Gestionează input-ul utilizatorului, apelează simularea și afișează graficul de evoluție (Matplotlib).
+
+### 2. Structura Codului
+
+```text
+POKER-MONTE-CARLO/
+├── 1. DATA_STRUCTURES
+│   ├── Constants (SUITS, RANKS)
+│   ├── Class Card (Model date)
+│   ├── create_deck (Generator pachet)
+│   ├── parse_hand (Input parser)
+│   ├── get_rank_5 (Reguli Poker)
+│   └── evaluate_hand (Optimizator mână)
+│
+├── 2. SIMULATION_ENGINE
+│   └── run_simulation (Algoritm Monte Carlo)
+│
+└── 3. UI_AND_VISUALIZATION
+    ├── get_coach_advice (Interpretare rezultate)
+    └── run_poker_coach (Main Entry Point & Plotting)
+
