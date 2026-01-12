@@ -42,8 +42,15 @@ Scrii in terminal
 python main.py
 ```
 apoi urmezi instructiunile de pe ecran. Atat 👍.
-<br><br><br><br><br>
 
+## Poze simulari :D
+
+![Simulare 1v1 Popa As de inimi vs 2 7 de romb](ps_1.png)
+![Simulare 1v1 Popa As de inimi vs set random de carti](ps_2.png)
+![Simulare 1v1 2 7 de inimi vs set random de carti](ps_3.png)
+![Simulare 1v1 6 7 de inimi vs set random de carti](ps_4.png)
+
+<br><br>
 # Breviar Matematic: Poker Monte Carlo
 Acest document detaliază conceptele matematice utilizate în motorul de simulare.
 
@@ -104,3 +111,7 @@ Chiar și într-un scenariu simplificat (Head's Up, Preflop), numărul de board-
 $$C(48, 5) = \frac{48!}{5!(48-5)!} = 1,712,304$$
 
 Deși calculabil pentru un singur scenariu, într-o aplicație reală unde range-urile adversarilor sunt necunoscute, complexitatea crește exponențial, făcând simularea singura opțiune viabilă în timp real.
+
+---
+
+
